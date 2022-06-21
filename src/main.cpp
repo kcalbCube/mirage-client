@@ -49,7 +49,8 @@ int main(int, char**)
 	fmtlog::setLogLevel(fmtlog::DBG);
  	fmtlog::startPollingThread();		
 	mirage::network::client::client().start();
-	mirage::network::client::client().connect(mirage::network::fromString("127.0.0.1", 5000));	
+	mirage::network::client::client().connect(mirage::network::fromStringUdp("127.0.0.1", 5000));
+	mirage::network::client::client().connectTcp(mirage::network::fromStringTcp("127.0.0.1", 5001));
 	
 	std::thread thr([](void) -> void
 	{	

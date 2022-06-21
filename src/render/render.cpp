@@ -11,11 +11,12 @@ void mirage::client::IconCache::RequestProcess::update(unsigned delta, void*)
 	std::lock_guard guard{IconCache::mutex};
 	auto& cache = IconCache::getInstance();
 
-	network::ResourceRequest::SerializedT queue{cache.resourceRequestQueue};
+	if(cache.resourceRequestQueue.empty())
+		return;
 
-	cache.resourceUpdateQueue.insert(cache.resourceUpdateQueue.end(),
-		std::make_move_iterator(cache.resourceRequestQueue.begin()),
-		std::make_move_iterator(cache.resourceRequestQueue.end()));
+	network::ResourceRequest::SerializedT queue{std::begin(cache.resourceRequestQueue), std::end(cache.resourceRequestQueue)};
+
+	cache.resourceUpdateQueue = cache.resourceRequestQueue;
 	cache.resourceRequestQueue.clear();
 
 	auto serialized = utils::serialize(queue);
@@ -24,7 +25,7 @@ void mirage::client::IconCache::RequestProcess::update(unsigned delta, void*)
 
 	network::ResourceRequest rq;
 
-	strcpy(rq.serialized, serialized.c_str());
+	memcpy(rq.serialized, serialized.data(), serialized.size());
 
 	network::client::client().send(network::AbstractPacket{rq});
 }
@@ -34,12 +35,11 @@ void mirage::client::IconCache::onResourceUpdate(network::client::PacketReceived
 	std::lock_guard guard{mutex};
 
 	auto deserialized = utils::deserialize<network::ResourceUpdate::SerializedT>(
-		std::string(utils::stringView(pre.packet.serialized, sizeof(pre.packet.serialized))));
-	
-	
+		std::string(std::string_view(pre.packet.serialized, sizeof(pre.packet.serialized))));
+		
 	for(auto&& resource : deserialized)
-	{
-		std::ranges::remove_copy(resourceUpdateQueue, resourceUpdateQueue.begin(), resource.id);
+	{	
+		resourceUpdateQueue.erase(resource.id);
 		if(resources.contains(resource.id))
 		{
 			auto&& oldResource = resources[resource.id];
@@ -93,13 +93,13 @@ void mirage::client::GameRenderer::render(MainWindowUpdateEvent&)
 void mirage::client::GameRenderer::onFrame(mirage::network::client::PacketReceivedEvent<network::GraphicFrame>& packet)
 {
 	auto nFrame = utils::deserialize<decltype(frame)>
-		(std::string{utils::stringView(packet.packet.serialized, std::size(packet.packet.serialized))});
+		(std::string{std::string_view(packet.packet.serialized, std::size(packet.packet.serialized))});
 	{
 		std::lock_guard guard{IconCache::mutex};
 		for(auto&& verticeGroup : nFrame)
 			for(auto&& vertice : verticeGroup.vertices)
 				if(!IconCache::getInstance().resources.contains(vertice.icon))
-					IconCache::getInstance().resourceRequestQueue.push_back(vertice.icon);
+					IconCache::getInstance().resourceRequestQueue.insert(vertice.icon);
 	}
 	
 	if(IconCache::getInstance().resourceRequestQueue.empty() &&

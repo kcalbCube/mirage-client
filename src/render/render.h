@@ -8,6 +8,7 @@
 #include <vector>
 #include "../client.h"
 #include <deque>
+#include <set>
 
 namespace mirage::client
 {
@@ -23,7 +24,7 @@ namespace mirage::client
 		};
 
 		static constexpr unsigned requestPeriod = 100;
-		std::vector<graphics::Icon> 	    
+		std::set<graphics::Icon> 	    
 			resourceRequestQueue,
 			resourceUpdateQueue;
 		std::map<graphics::Icon, graphics::IconResource> resources;

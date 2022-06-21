@@ -1,4 +1,5 @@
 #include "client.h"
+#include "libs/asio/include/boost/asio/read.hpp"
 #include <core/network.h>
 #include <core/event.h>
 #include <boost/bind.hpp>
@@ -36,14 +37,19 @@ namespace mirage::network::client
 			const boost::system::error_code& ec,
 			size_t size)
 	{	
-		handlePacketRaw(AbstractPacket(&packet, size));
+		handlePacketRaw(AbstractPacket(&buffer.packet, size));
 		startReceive();
 	}
 
 	Client::Client(std::string sv)
 		: username {std::move(sv)}, 
 		  socket(ioContext(),
-			boost::asio::ip::udp::endpoint(boost::asio::ip::udp::v4(), 0)) {}
+			boost::asio::ip::udp::endpoint(boost::asio::ip::udp::v4(), 0)),
+		  socketTcp{ioContext()},
+		  buffer{},
+		  tcpBuffer{}
+	{
+	}
 	
 	Client::~Client(void) {}
 
@@ -57,23 +63,57 @@ namespace mirage::network::client
 		send(AbstractPacket(incon));
 	}
 
+	void Client::connectTcp(boost::asio::ip::tcp::endpoint con)
+	{
+		socketTcp.connect(con);
+		connectedTcp = std::move(con);		
+		
+	}
+
 	void Client::send(const boost::asio::const_buffer& buffer)
 	{
 		socket.send_to(buffer, connected);
 	}
 
+	void Client::sendTcp(const boost::asio::const_buffer& buffer)
+	{
+		socketTcp.send(buffer);
+	}
+
 	void Client::startReceive(void)
 	{
 		socket.async_receive_from(
-				boost::asio::buffer(data), endpoint,
-				boost::bind(&Client::handleReceiveFrom,
-					this,
-					boost::asio::placeholders::error,
-					boost::asio::placeholders::bytes_transferred));
+			boost::asio::buffer(buffer.data), endpoint,
+			boost::bind(&Client::handleReceiveFrom,
+				this,
+				boost::asio::placeholders::error,
+				boost::asio::placeholders::bytes_transferred));
+	}
+
+	void Client::handleTcpReceiveFrom(	
+			const boost::system::error_code& ec, 
+			size_t size)
+	{
+		if ((ec == boost::asio::error::eof) || (ec == boost::asio::error::connection_reset))
+			return; // FIXME: add disconnect handling
+		handlePacketRaw(AbstractPacket(&tcpBuffer.packet, size));
+		startReceiveTcp();
+	}
+
+	void Client::startReceiveTcp(void)
+	{
+		socketTcp.async_receive(
+			boost::asio::buffer(tcpBuffer.data),
+			boost::bind(&Client::handleTcpReceiveFrom,
+				this,	
+				boost::asio::placeholders::error,
+				boost::asio::placeholders::bytes_transferred));
+
 	}
 
 	void Client::start(void)
 	{
 		startReceive();
+		startReceiveTcp();
 	}
 }

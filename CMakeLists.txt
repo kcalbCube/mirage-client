@@ -25,6 +25,7 @@ target_compile_options(${PROJECT_NAME} PUBLIC
 	-Wfloat-conversion 
 	-Wno-unused-but-set-variable
 	-march=native
+	-fno-strict-aliasing
 )
 
 cotire(${PROJECT_NAME})
