@@ -16,11 +16,11 @@ namespace mirage::client
 		: public ecs::Component<IconCache>,
 		  public ecs::Singleton<IconCache>,
 		  public ecs::Singleton<IconCache>::Lockable,
-		  public ecs::Processing<unsigned>
+		  public ecs::Processing<IconCache>
 	{
-		struct RequestProcess : Process<RequestProcess, unsigned>
+		struct RequestProcess : Process<RequestProcess>
 		{
-			void update(unsigned delta, void*);
+			void update(float delta);
 		};
 
 		static constexpr unsigned requestPeriod = 100;

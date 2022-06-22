@@ -6,10 +6,10 @@
 #include <cstring>
 #include <ranges>
 
-void mirage::client::IconCache::RequestProcess::update(unsigned delta, void*)
+void mirage::client::IconCache::RequestProcess::update(float)
 {
 	std::lock_guard guard{IconCache::mutex};
-	auto& cache = IconCache::getInstance();
+	auto& cache = parent.get();
 
 	if(cache.resourceRequestQueue.empty())
 		return;
