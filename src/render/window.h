@@ -4,6 +4,7 @@
 
 struct SDL_Window;
 struct SDL_Renderer;
+union SDL_Event;
 
 namespace mirage::client
 {
@@ -30,4 +31,8 @@ namespace mirage::client
 
 	struct MainWindowUpdateEvent {};
 	struct MainWindowRenderEvent {};
+	struct EventUpdateEvent
+	{
+		SDL_Event* event;
+	};
 }

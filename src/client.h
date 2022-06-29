@@ -64,5 +64,6 @@ namespace mirage::network::client
 		static Client client("kcalbCube");
 		return client;
 	}
-}
 
+	struct ClientConnected {};
+}

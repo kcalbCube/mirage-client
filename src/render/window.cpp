@@ -11,7 +11,7 @@ void mirage::client::MainWindow::initialize(unsigned w, unsigned h)
 {
 	if(SDL_Init(SDL_INIT_EVERYTHING))
 	{
-		logi("Unable initialize SDL2. Aborting.");
+		logi("Unable initialize SDL2: {}", SDL_GetError());
 		abort();
 	}
 
@@ -59,7 +59,8 @@ void mirage::client::MainWindow::handleEvents(void)
 	SDL_Event event;
 	while (SDL_PollEvent(&event))
 	{
-		ImGui_ImplSDL2_ProcessEvent(&event);	
+		ImGui_ImplSDL2_ProcessEvent(&event);
+		event::triggerEvent<EventUpdateEvent>(&event);
 	}
 }
 void mirage::client::MainWindow::render(void)
@@ -81,8 +82,8 @@ void mirage::client::MainWindow::render(void)
 
 	ImGui::Render();	
 
-        ImGui_ImplSDLRenderer_RenderDrawData(ImGui::GetDrawData());
-        SDL_RenderPresent(renderer);
+	ImGui_ImplSDLRenderer_RenderDrawData(ImGui::GetDrawData());
+	SDL_RenderPresent(renderer);
 }
 
 void mirage::client::MainWindow::deinitialize(void)

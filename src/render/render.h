@@ -9,6 +9,7 @@
 #include "../client.h"
 #include <deque>
 #include <set>
+#include <core/processing.h>
 
 namespace mirage::client
 {

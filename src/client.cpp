@@ -14,6 +14,11 @@ namespace mirage::network::client
 		switch(packet.packet->id)
 		{
 			case PacketId::connect:
+			{
+				const auto cr = packetCast<ConnectionResponce>(packet);
+				if(cr.responce == ConnectionResponce::success)
+					event::enqueueEvent<ClientConnected>();
+			}
 				break;
 			case PacketId::message:
 				event::enqueueEvent<PacketReceivedEvent<MessageSent>>
