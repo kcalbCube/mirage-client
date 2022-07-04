@@ -1,8 +1,10 @@
 #include "client.h"
+#include "core/packet.h"
 #include "libs/asio/include/boost/asio/read.hpp"
 #include <core/network.h>
 #include <core/event.h>
 #include <boost/bind.hpp>
+#include "render/window.h"
 
 namespace mirage::network::client
 {
@@ -18,6 +20,7 @@ namespace mirage::network::client
 				const auto cr = packetCast<ConnectionResponce>(packet);
 				if(cr.responce == ConnectionResponce::success)
 					event::enqueueEvent<ClientConnected>();
+				sendInfo();
 			}
 				break;
 			case PacketId::message:
@@ -120,5 +123,20 @@ namespace mirage::network::client
 	{
 		startReceive();
 		startReceiveTcp();
+	}
+
+	void Client::sendInfo(void)
+	{
+		network::ClientInformationUpdate::SerializedT info;
+		info.screenWidth = mirage::client::mainWindow().width;
+		info.screenHeight = mirage::client::mainWindow().height;
+
+		network::ClientInformationUpdate update;
+
+		auto serialized = utils::serialize(info);
+
+		memcpy(update.serialized, serialized.data(), serialized.size());
+
+		send(AbstractPacket{update});
 	}
 }

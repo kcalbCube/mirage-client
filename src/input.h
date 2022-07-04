@@ -11,6 +11,8 @@ namespace mirage::client
 		: ecs::Component<InputProcessor>,
 		  ecs::Processing<InputProcessor>
 	{
+		bool isUpdated = false;
+
 		struct InputProcess : Process<InputProcess>
 		{
 			void update(float);

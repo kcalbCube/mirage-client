@@ -1,4 +1,5 @@
 #include "window.h"
+#include "../client.h"
 #include <backends/imgui_impl_sdlrenderer.h>
 #include <backends/imgui_impl_sdl.h>
 #include <core/ecs.h>
@@ -60,12 +61,22 @@ void mirage::client::MainWindow::handleEvents(void)
 	while (SDL_PollEvent(&event))
 	{
 		ImGui_ImplSDL2_ProcessEvent(&event);
+
+		if(event.type == SDL_WINDOWEVENT)
+			if(event.window.event == SDL_WINDOWEVENT_RESIZED)
+			{
+				width = event.window.data1;
+				height = event.window.data2;
+
+				mirage::network::client::client().sendInfo();
+				continue;
+			}
 		event::triggerEvent<EventUpdateEvent>(&event);
 	}
 }
 void mirage::client::MainWindow::render(void)
 {
-	ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);    
+	ImVec4 clear_color = ImVec4(0.f, 0.f, 0.f, 1.00f);    
         SDL_SetRenderDrawColor(renderer, 
 		(Uint8)(clear_color.x * 255), 
 		(Uint8)(clear_color.y * 255), 

@@ -7,6 +7,9 @@
 
 void mirage::client::InputProcessor::InputProcess::update(float)
 {
+	if(!parent->isUpdated)
+		return;
+
 	network::Input input;
 	auto serialized = utils::serialize(parent->pressed);
 	memcpy(input.serialized, serialized.data(), serialized.size());
@@ -28,12 +31,16 @@ void mirage::client::InputProcessor::onEventUpdate(EventUpdateEvent& evev)
 	case SDL_QUIT:
 		SDL_Quit();
 		abort(); // TODO: add properly exit
+	default:
+		return;	
 	}
+
+	isUpdated = true;
 }
 
 void mirage::client::InputProcessor::initialize(void)
 {
-	startProcess<InputProcess>(ecs::processing::TickProcessor<std::ratio<1,1>>::getInstance());
+	startProcess<InputProcess>(ecs::processing::TickProcessor<std::ratio<20,1>>::getInstance());
 }
 
 void mirage::client::InputProcessor::lateInitialize(void)

@@ -50,6 +50,8 @@ namespace mirage::network::client
 		void startReceiveTcp(void);
 
 		void start(void);
+
+		void sendInfo(void);
 	};
 	
 	template<typename T>

@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cstring>
 #include <ranges>
+#include <SDL.h>
 
 void mirage::client::IconCache::RequestProcess::update(float)
 {
@@ -68,24 +69,41 @@ void mirage::client::GameRenderer::render(MainWindowUpdateEvent&)
 
 	SDL_SetRenderDrawColor(mainWindow().renderer, 255, 0, 0, 255);
 
-	const auto w = mainWindow().width;
-	const auto h = mainWindow().height;
+	auto w = mainWindow().width;
+	auto h = mainWindow().height;
 
 	for(auto&& verticeGroup : frame)
 	{
-		/*
-		 * TODO: rewrite for unseq iterating
-		 */
+		graphics::Scale scale{1.f, 1.f};
+
+		for(auto&& filter : verticeGroup.filters)
+		{	
+			if(graphics::Scale* scale_ = boost::get<graphics::Scale>(&filter))
+			{
+				scale.first *= scale_->first;
+				scale.second*= scale_->second;
+			}
+		}
+
 		for(auto&& vertice : verticeGroup.vertices)
 		{
+			auto texture = IconCache::getInstance().textures[vertice.icon];
+
+			auto rawX = static_cast<int>(vertice.x); 
+			auto rawY = static_cast<int>(vertice.y);
+
+			int tW, tH;
+			SDL_QueryTexture(texture, nullptr, nullptr, &tW, &tH); // TODO: move this to texture loader.
+
 			SDL_Rect rect
 				{
-					static_cast<int>((static_cast<float>(vertice.x) / UINT16_MAX) * w), 
-					static_cast<int>((static_cast<float>(vertice.y) / UINT16_MAX) * h), 
-					64, 64
+					(rawX + tW / 2) - static_cast<int>(tW * scale.first),
+					(rawY + tH / 2) - static_cast<int>(tH * scale.second),
+					static_cast<int>(tW * scale.first),
+					static_cast<int>(tH * scale.second)
 				};
 
-			SDL_RenderCopy(mainWindow().renderer, IconCache::getInstance().textures[vertice.icon], nullptr, &rect);
+			SDL_RenderCopy(mainWindow().renderer, texture, nullptr, &rect);
 		}
 	}
 }
@@ -101,6 +119,14 @@ void mirage::client::GameRenderer::onFrame(mirage::network::client::PacketReceiv
 				if(!IconCache::getInstance().resources.contains(vertice.icon))
 					IconCache::getInstance().resourceRequestQueue.insert(vertice.icon);
 	}
+
+	// TODO: rewrite layers
+	for(auto&& vg : nFrame)
+		std::sort(std::begin(vg.vertices), std::end(vg.vertices), 
+			[](auto& a, auto& b) -> bool
+			{
+				return a.layer < b.layer;
+			});
 	
 	if(IconCache::getInstance().resourceRequestQueue.empty() &&
 	   IconCache::getInstance().resourceUpdateQueue.empty())

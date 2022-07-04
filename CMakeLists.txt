@@ -12,8 +12,9 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 include(CMake/Utils.cmake)
 include(CMake/cotire.cmake)
 
+add_subdirectory("${CMAKE_SOURCE_DIR}/include/SDL_image")
 add_subdirectory("${CMAKE_SOURCE_DIR}/include/SDL")
-add_subdirectory("${CMAKE_SOURCE_DIR}/include/boost")
+add_subdirectory("${CMAKE_SOURCE_DIR}/include/boost" EXCLUDE_FROM_ALL)
 add_subdirectory("${CMAKE_SOURCE_DIR}/include/fmtlog")
 
 add_subdirectory("${CMAKE_SOURCE_DIR}/core")
@@ -22,6 +23,8 @@ file(GLOB_RECURSE SOURCE_FILES CONFIGURE_DEPENDS "src/*.h" "src/*.cpp")
 
 add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 
+cotire(boost_serialization)
+cotire(mirage-core)
 cotire(${PROJECT_NAME})
 
-target_link_libraries(${PROJECT_NAME} PUBLIC SDL2-static SDL2main boost_serialization fmt-header-only fmtlog-static mirage-core)
+target_link_libraries(${PROJECT_NAME} PUBLIC SDL2 SDL2main boost_serialization fmt-header-only fmtlog-static mirage-core)
